@@ -3,14 +3,36 @@
 import urllib, urllib2, re, sys
 import xbmcplugin, xbmcgui
 
-def getHTML(url):
+def getHTML(url, data = False):
     headers = {'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3', 'Content-Type':'application/x-www-form-urlencoded'}
-    conn = urllib2.urlopen(urllib2.Request(url, urllib.urlencode({}), headers))
+    if data == False:
+        conn = urllib2.urlopen(urllib2.Request(url, urllib.urlencode({}), headers))
+    else:
+        conn = urllib2.urlopen(urllib2.Request(url, urllib.urlencode(data), headers))
     
     html = conn.read()
     conn.close()
     
     return html
+
+def showkeyboard(txtMessage="",txtHeader="",passwordField=False):
+    if txtMessage=='None': txtMessage=''
+    keyboard = xbmc.Keyboard(txtMessage, txtHeader, passwordField)#("text to show","header text", True="password field"/False="show text")
+    keyboard.doModal()
+    if keyboard.isConfirmed():
+        return keyboard.getText()
+    else:
+        return False # return ''
+
+def Search():
+    text = showkeyboard('', 'Поиск по названию')
+    url = 'http://linecinema.org/'
+    data =  {'do': 'search', 'subaction': 'search', 'story' : text.decode('utf-8').encode('windows-1251')}
+    html = getHTML(url, data)
+    movie_links = re.compile('<h1>\s*<a href="(.+?)">(.+?)<\/a>\s*<\/h1>').findall(html.decode('windows-1251').encode('utf-8'))
+    pictures_link = re.compile('<img\ssrc="http\:\/\/www.linecinema.org([^"]+)"\swidth="180">').findall(html.decode('windows-1251').encode('utf-8'))
+    for i in range(0, len(movie_links)):
+        addDir(movie_links[i][1], movie_links[i][0], 30, pictures_link[i])
 
 def isLinkUseful(needle):
     haystack = ['/index.php', '/newsz/Televydenye/100432-2008-3-11-432.html', '/newsz/500183-tex-podderzhka.html']
@@ -20,7 +42,7 @@ def Categories():
     url = 'http://www.linecinema.org'
     html = getHTML(url)
     genre_links = re.compile('<a href="(.+?)" title="" class="mainmenu">(.+?)</a><br />').findall(html.decode('windows-1251').encode('utf-8'))
-
+    addDir('Поиск...', '', 35, None)
     for link, title in genre_links:
         if isLinkUseful(link):
             addDir(title, url + link, 20, None)
@@ -120,5 +142,7 @@ elif mode == 20:
     Movies(url, page)
 elif mode == 30:
     Videos(url, title, picture)
+elif mode == 35:
+    Search()
 
 xbmcplugin.endOfDirectory(int(sys.argv[1]))
