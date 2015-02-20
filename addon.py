@@ -32,7 +32,10 @@ def Search():
     movie_links = re.compile('<h1>\s*<a href="(.+?)">(.+?)<\/a>\s*<\/h1>').findall(html.decode('windows-1251').encode('utf-8'))
     pictures_link = re.compile('<img\ssrc="http\:\/\/www.linecinema.org([^"]+)"\swidth="180">').findall(html.decode('windows-1251').encode('utf-8'))
     for i in range(0, len(movie_links)):
-        addDir(movie_links[i][1], movie_links[i][0], 30, pictures_link[i])
+        if len(pictures_link) > i:
+            addDir(movie_links[i][1], movie_links[i][0], 30, pictures_link[i])
+        else:
+            addDir(movie_links[i][1], movie_links[i][0], 30, None)
 
 def isLinkUseful(needle):
     haystack = ['/index.php', '/newsz/Televydenye/100432-2008-3-11-432.html', '/newsz/500183-tex-podderzhka.html']
@@ -88,7 +91,10 @@ def get_params():
 
 
 def addLink(title, url, picture):
-    item = xbmcgui.ListItem(title, iconImage='DefaultVideo.png', thumbnailImage='http://www.linecinema.org/' + picture)
+    if  picture == None:
+        item = xbmcgui.ListItem(title, iconImage='DefaultVideo.png', thumbnailImage='')
+    else:
+        item = xbmcgui.ListItem(title, iconImage='DefaultVideo.png', thumbnailImage='http://www.linecinema.org/' + picture)
     item.setInfo( type='Video', infoLabels={'Title': title} )
 
     xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=url, listitem=item)
